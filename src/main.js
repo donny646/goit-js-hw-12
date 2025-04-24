@@ -21,6 +21,14 @@ loadmoreBtn.addEventListener('click', handleLoadMore);
 let currentPage = 1;
 let currentQuery = '';
 let totalHits = 0;
+const params = {
+  q: '',
+  colors: '',
+  category: '',
+  per_page: 15,
+  page: 1,
+};
+let perPage = 15;
 
 async function handleSubmit(event) {
   event.preventDefault();
@@ -28,9 +36,21 @@ async function handleSubmit(event) {
   showLoader();
 
   const searchText = event.currentTarget.elements['search-text'].value.trim();
+  const currentColor = event.currentTarget.elements.select_colors.value;
+  const currentCategoty = event.currentTarget.elements.select_category.value;
+  perPage = event.currentTarget.elements.select_quantity.value;
+  if (perPage === '') {
+    perPage = 15;
+  }
 
   currentQuery = searchText;
   currentPage = 1;
+
+  params.q = currentQuery;
+  params.colors = currentColor;
+  params.page = currentPage;
+  params.category = currentCategoty;
+  params.per_page = perPage;
 
   if (searchText === '') {
     iziToast.info({
@@ -43,7 +63,7 @@ async function handleSubmit(event) {
   }
 
   try {
-    const data = await getImagesByQuery(currentQuery);
+    const data = await getImagesByQuery(params);
 
     totalHits = data.totalHits;
 
@@ -51,7 +71,8 @@ async function handleSubmit(event) {
 
     createGallery(data.hits);
 
-    const totalLoaded = currentPage * data.hits.length;
+    const totalLoaded = currentPage * perPage;
+
     if (totalLoaded < totalHits) {
       showLoadMoreButton();
     } else {
@@ -75,17 +96,20 @@ async function handleSubmit(event) {
 
 async function handleLoadMore() {
   currentPage++;
+  params.page = currentPage;
 
   showLoader();
 
   hideLoadMoreButton();
 
   try {
-    const data = await getImagesByQuery(currentQuery, currentPage);
+    const data = await getImagesByQuery(params);
 
     createGallery(data.hits);
 
-    const totalLoaded = currentPage * data.hits.length;
+    const totalLoaded = currentPage * perPage;
+    console.log(totalLoaded);
+
     if (totalLoaded < totalHits) {
       showLoadMoreButton();
     } else {
@@ -114,3 +138,12 @@ async function handleLoadMore() {
     hideLoader();
   }
 }
+
+const toggleBtn = document.querySelector('#toggleFilters');
+const filtersContainer = document.querySelector('.filters_container');
+
+toggleBtn.addEventListener('click', () => {
+  const isVisible = filtersContainer.style.display === 'block';
+  filtersContainer.style.display = isVisible ? 'none' : 'block';
+  toggleBtn.textContent = isVisible ? '🔽 Show Filters' : '🔼 Hide Filters';
+});
